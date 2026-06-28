@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Elasticsearch App</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 600px; margin: 30px auto; padding: 0 20px; color: #333; }
+    .section { border: 1px solid #e0e0e0; padding: 20px; margin-bottom: 20px; border-radius: 6px; background: #fafafa; }
+    input, textarea { width: 100%; padding: 10px; margin: 5px 0 15px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+    button { padding: 10px 20px; background: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    button:hover { background: #0052a3; }
+    .search-container { position: relative; }
+    .suggestions { 
+      position: absolute; width: 100%; background: white; 
+      border: 1px solid #ccc; border-top: none; max-height: 180px; 
+      overflow-y: auto; z-index: 1000; display: none; box-sizing: border-box;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .suggestion-item { padding: 10px; cursor: pointer; }
+    .suggestion-item:hover { background-color: #f0f0f0; }
+    .result-item { padding: 12px; border-bottom: 1px solid #eee; background: white; margin-top: 5px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+  <h2>Elasticsearch Engine Control Panel</h2>
+
+  <div class="section">
+    <h3>Add Product (POST)</h3>
+    <form id="productForm">
+      <label>Product Title</label>
+      <input type="text" id="title" placeholder="e.g., Sony WH-1000XM5 Headphones" required>
+      <label>Description</label>
+      <textarea id="description" placeholder="e.g., Industry leading noise canceling wireless headphones" required></textarea>
+      <label>Price ($)</label>
+      <input type="number" id="price" placeholder="e.g., 399" required>
+      <button type="submit">Add Document</button>
+    </form>
+  </div>
+
+  <div class="section">
+    <h3>Search Cluster</h3>
+    <div class="search-container">
+      <input type="text" id="searchInput" placeholder="Type to fetch recommendations dynamically..." autocomplete="off">
+      <div id="suggestionsBox" class="suggestions"></div>
+    </div>
+    <button id="searchBtn">Full Search</button>
+    
+    <h4>Engine Output Results:</h4>
+    <div id="searchResults"></div>
+  </div>
+
+  <script>
+    // Relative API mapping architecture to comply seamlessly with Docker routing rules
+    const API_URL = '/api';
+
+    document.getElementById('productForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const product = {
+        title: document.getElementById('title').value,
+        description: document.getElementById('description').value,
+        price: parseFloat(document.getElementById('price').value)
+      };
+
+      const res = await fetch(`${API_URL}/products`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(product)
+      });
+      
+      if(res.ok) {
+        alert('Product indexed successfully into cluster!');
+        document.getElementById('productForm').reset();
+      }
+    });
+
+    const searchInput = document.getElementById('searchInput');
+    const suggestionsBox = document.getElementById('suggestionsBox');
+    const searchResults = document.getElementById('searchResults');
+
+    // Dynamic Engine Recommendations Execution
+    searchInput.addEventListener('input', async () => {
+      const query = searchInput.value.trim();
+      if (!query) {
+        suggestionsBox.style.display = 'none';
+        return;
+      }
+
+      const res = await fetch(`${API_URL}/suggest?q=${encodeURIComponent(query)}`);
+      const suggestions = await res.json();
+
+      if (suggestions.length > 0) {
+        suggestionsBox.innerHTML = suggestions
+          .map(item => `<div class="suggestion-item">${item}</div>`)
+          .join('');
+        suggestionsBox.style.display = 'block';
+      } else {
+        suggestionsBox.style.display = 'none';
+      }
+    });
+
+    suggestionsBox.addEventListener('click', (e) => {
+      if (e.target.classList.contains('suggestion-item')) {
+        searchInput.value = e.target.innerText;
+        suggestionsBox.style.display = 'none';
+        executeSearch();
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (e.target !== searchInput) suggestionsBox.style.display = 'none';
+    });
+
+    // Full cluster query execution
+    async function executeSearch() {
+      const query = searchInput.value.trim();
+      const res = await fetch(`${API_URL}/search?q=${encodeURIComponent(query)}`);
+      const results = await res.json();
+
+      if(results.length === 0) {
+        searchResults.innerHTML = '<p>No cluster matches found.</p>';
+        return;
+      }
+
+      searchResults.innerHTML = results.map(item => `
+        <div class="result-item">
+          <strong>${item.title}</strong> - $${item.price}<br>
+          <small style="color:#666">${item.description}</small>
+        </div>
+      `).join('');
+    }
+
+    document.getElementById('searchBtn').addEventListener('click', executeSearch);
+  </script>
+</body>
+</html>
