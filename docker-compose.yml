@@ -30,6 +30,7 @@ services:
       - "3000:3000"
     environment:
       - ES_NODE=http://elasticsearch:9200
+      - ELASTIC_CLIENT_APIVERSIONING=true
     depends_on:
       elasticsearch:
         condition: service_healthy # 👇 ADD THIS: Forces backend to wait for the healthcheck to pass
