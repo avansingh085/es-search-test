@@ -66,6 +66,8 @@ app.post('/api/products', async (req, res) => {
     await client.indices.refresh({ index: INDEX_NAME });
     res.status(201).json({ message: 'Product indexed!', id: response._id });
   } catch (error) {
+    console.error('FULL ELASTIC ERROR DETECTED:', JSON.stringify(error, null, 2));
+    console.error('Error message:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
