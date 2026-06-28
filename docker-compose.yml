@@ -16,6 +16,12 @@ services:
       - "9200:9200"
     volumes:
       - esdata:/usr/share/elasticsearch/data
+    # 👇 ADD THIS: Teaches Docker how to check if ES is actually awake
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q 'status'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   backend:
     build: .
@@ -25,7 +31,8 @@ services:
     environment:
       - ES_NODE=http://elasticsearch:9200
     depends_on:
-      - elasticsearch
+      elasticsearch:
+        condition: service_healthy # 👇 ADD THIS: Forces backend to wait for the healthcheck to pass
 
 volumes:
   esdata:

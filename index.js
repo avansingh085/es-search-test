@@ -17,7 +17,7 @@ const client = new Client({
   tls: {
     rejectUnauthorized: false 
   },
-  enableCompatibilityMode: 9
+  enableCompatibilityMode: 8
 }); 
 const INDEX_NAME = 'products';
 
