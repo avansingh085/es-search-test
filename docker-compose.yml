@@ -11,7 +11,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 768M
     ports:
       - "9200:9200"
     volumes:

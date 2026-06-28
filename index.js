@@ -12,7 +12,12 @@ app.use(express.static(__dirname));
 
 // Use environment variable for Elastic node (configured via docker-compose)
 const ES_NODE = process.env.ES_NODE || 'http://localhost:9200';
-const client = new Client({ node: ES_NODE }); 
+const client = new Client({ 
+  node: ES_NODE,
+  tls: {
+    rejectUnauthorized: false 
+  }
+}); 
 const INDEX_NAME = 'products';
 
 // Initialize Index with Search-as-you-type autocomplete mappings
